@@ -1,0 +1,262 @@
+
+<script>
+    // ==========================================
+    // 1. MENGAMBIL ELEMEN HTML
+    // ==========================================
+    const btnSave = document.getElementById('btn-save');
+    const btnDownload = document.getElementById('btn-download');
+    const btnBluetooth = document.getElementById('btn-bluetooth');
+    const tableBody = document.getElementById('table-body');
+
+    const valHR = document.getElementById('val-hr');
+    const valTemp = document.getElementById('val-temp');
+
+    const badgeHR = document.getElementById('badge-hr');
+    const containerHR = document.getElementById('container-hr');
+    const containerTemp = document.getElementById('container-temp');
+    const iconHeart = document.getElementById('icon-heart');
+
+    // ==========================================
+    // 2. VARIABEL DATA
+    // ==========================================
+    let savedData = [];
+    let currentHR = 0;
+    let currentTemp = 0;
+
+    // ==========================================
+    // 3. FUNGSI GENERATE DATA ACAK
+    // ==========================================
+    function generateRandomData() {
+
+        // Heart Rate acak: 55 - 115 BPM
+        currentHR = Math.floor(Math.random() * (115 - 55 + 1)) + 55;
+
+        // Suhu tubuh acak: 36.0 - 37.8 °C
+        currentTemp = Number((36 + Math.random() * 1.8).toFixed(1));
+
+        // Perbarui tampilan
+        updateDashboard();
+    }
+
+    // ==========================================
+    // 4. ANALISIS KONDISI
+    // ==========================================
+    function analisisKesehatan(hr, temp) {
+
+        if (hr < 50 || hr > 120 || temp < 35.0 || temp > 38.5) {
+            return {
+                text: "Kritis",
+                class: "danger",
+                textClass: "text-danger"
+            };
+        }
+
+        if (
+            (hr >= 50 && hr < 60) ||
+            (hr > 100 && hr <= 120) ||
+            (temp >= 35.0 && temp < 36.1) ||
+            (temp > 37.2 && temp <= 38.5)
+        ) {
+            return {
+                text: "Kurang Sehat",
+                class: "warning",
+                textClass: "text-warning"
+            };
+        }
+
+        return {
+            text: "Sehat",
+            class: "normal",
+            textClass: "text-success"
+        };
+    }
+
+    // ==========================================
+    // 5. MEMPERBARUI DASHBOARD
+    // ==========================================
+    function updateDashboard() {
+
+        // Menampilkan angka HR dan suhu
+        valHR.textContent = currentHR + " bpm";
+        valTemp.textContent = currentTemp.toFixed(1) + " °C";
+
+        // Analisis data
+        const hasil = analisisKesehatan(currentHR, currentTemp);
+
+        // Memperbarui badge status
+        badgeHR.textContent = hasil.text;
+
+        badgeHR.classList.remove(
+            "badge-normal",
+            "badge-warning",
+            "badge-danger"
+        );
+
+        badgeHR.classList.add("badge-" + hasil.class);
+
+        // Memperbarui warna kotak HR
+        containerHR.classList.remove(
+            "bg-normal",
+            "bg-warning",
+            "bg-danger"
+        );
+
+        containerHR.classList.add("bg-" + hasil.class);
+
+        // Memperbarui warna kotak suhu
+        containerTemp.classList.remove(
+            "bg-normal",
+            "bg-warning",
+            "bg-danger"
+        );
+
+        containerTemp.classList.add("bg-" + hasil.class);
+
+        // Animasi ikon jantung
+        iconHeart.style.animation = "pulse 1s infinite";
+    }
+
+    // ==========================================
+    // 6. SIMULASI DATA OTOMATIS
+    // ==========================================
+
+    // Data langsung muncul saat halaman dibuka
+    generateRandomData();
+
+    // Data berubah setiap 2 detik
+    setInterval(function() {
+        generateRandomData();
+    }, 2000);
+
+    // ==========================================
+    // 7. TOMBOL BLUETOOTH
+    // ==========================================
+    btnBluetooth.addEventListener("click", function() {
+        alert(
+            "Mode simulasi aktif. Data HR dan suhu dihasilkan secara acak. Bluetooth tidak digunakan."
+        );
+    });
+
+    // ==========================================
+    // 8. TOMBOL SAVE DATA
+    // ==========================================
+    btnSave.addEventListener("click", function() {
+
+        const nama = document.getElementById("input-nama").value.trim();
+
+        if (nama === "") {
+            alert("Masukkan nama pasien terlebih dahulu!");
+            return;
+        }
+
+        if (currentHR === 0 || currentTemp === 0) {
+            alert("Data belum tersedia!");
+            return;
+        }
+
+        const hasil = analisisKesehatan(currentHR, currentTemp);
+
+        const waktu = new Date().toLocaleString("id-ID");
+
+        const data = {
+            waktu: waktu,
+            nama: nama,
+            hr: currentHR,
+            suhu: currentTemp.toFixed(1),
+            keterangan: hasil.text
+        };
+
+        // Simpan data
+        savedData.push(data);
+
+        // Hapus placeholder tabel
+        if (tableBody.querySelector(".placeholder-text")) {
+            tableBody.innerHTML = "";
+        }
+
+        // Buat baris tabel
+        const row = document.createElement("tr");
+
+        const values = [
+            data.waktu,
+            data.nama,
+            data.hr + " bpm",
+            data.suhu + " °C",
+            data.keterangan
+        ];
+
+        values.forEach(function(value, index) {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+
+            if (index === 4) {
+                cell.classList.add(hasil.textClass);
+                cell.classList.add("table-status");
+            }
+
+            row.appendChild(cell);
+        });
+
+        tableBody.prepend(row);
+
+        alert("Data berhasil disimpan!");
+    });
+
+    // ==========================================
+    // 9. DOWNLOAD DATA CSV
+    // ==========================================
+    btnDownload.addEventListener("click", function() {
+
+        if (savedData.length === 0) {
+            alert("Belum ada data yang disimpan!");
+            return;
+        }
+
+        const header = [
+            "Waktu",
+            "Nama",
+            "Heart Rate (BPM)",
+            "Suhu (C)",
+            "Keterangan"
+        ];
+
+        const rows = savedData.map(function(data) {
+            return [
+                data.waktu,
+                data.nama,
+                data.hr,
+                data.suhu,
+                data.keterangan
+            ];
+        });
+
+        const csvContent = [
+            header,
+            ...rows
+        ].map(function(row) {
+            return row.map(function(value) {
+                return '"' + String(value).replace(/"/g, '""') + '"';
+            }).join(",");
+        }).join("\n");
+
+        const blob = new Blob(
+            ["\uFEFF" + csvContent],
+            { type: "text/csv;charset=utf-8;" }
+        );
+
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "Smart_Health_Data.csv";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+    });
+
+</script>
+</body>
+</html>
